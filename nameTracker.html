@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mute Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: antiquewhite;
+        }
+        input {
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 12px;
+            font-size: 16px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Mute Tracker</h2>
+    <input type="text" id="nameInput" placeholder="Enter member name">
+    <button onclick="addName()">Submit</button>
+
+    <h3>Members have been muted:</h3>
+    <ul id="nameList"></ul>
+
+    <script>
+        // Load stored names from localStorage
+        let nameCounts = JSON.parse(localStorage.getItem('nameCounts')) || {};
+
+        function addName() {
+            let nameInput = document.getElementById('nameInput').value.trim();
+            if (nameInput === '') {
+                alert('Please enter a member name.');
+                return;
+            }
+
+            // Update count
+            nameCounts[nameInput] = (nameCounts[nameInput] || 0) + 1;
+
+            // Save to localStorage
+            localStorage.setItem('nameCounts', JSON.stringify(nameCounts));
+
+            // Refresh the display
+            displayNames();
+        }
+
+        function displayNames() {
+            let nameList = document.getElementById('nameList');
+            nameList.innerHTML = ''; // Clear previous list
+            for (let name in nameCounts) {
+                let li = document.createElement('li');
+                li.textContent = `${name}: muted ${nameCounts[name]} times`;
+                nameList.appendChild(li);
+            }
+        }
+
+        // Display stored names on page load
+        displayNames();
+    </script>
+
+</body>
+</html>
