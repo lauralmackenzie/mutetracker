@@ -13,45 +13,50 @@
         appId: "1:594708484721:web:e652b6d2593ad80480c1d0"
     };
 
-    // Initialize Firebase & Firestore
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    try {
+        // Initialize Firebase & Firestore
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    // Function to add a mute entry
-    window.addMute = async function () {
-        let nameInput = document.getElementById('nameInput').value.trim();
-        if (nameInput === '') {
-            alert('Please enter a member name.');
-            return;
-        }
+        // Function to add a mute entry
+        window.addMute = async function () {
+            let nameInput = document.getElementById('nameInput').value.trim();
+            if (nameInput === '') {
+                alert('Please enter a member name.');
+                return;
+            }
 
-        const nameRef = doc(db, "mutes", nameInput);
-        const docSnap = await getDoc(nameRef);
+            const nameRef = doc(db, "mutes", nameInput);
+            const docSnap = await getDoc(nameRef);
 
-        if (docSnap.exists()) {
-            let newCount = docSnap.data().count + 1;
-            await updateDoc(nameRef, { count: newCount });
-        } else {
-            await setDoc(nameRef, { count: 1 });
-        }
+            if (docSnap.exists()) {
+                let newCount = docSnap.data().count + 1;
+                await updateDoc(nameRef, { count: newCount });
+            } else {
+                await setDoc(nameRef, { count: 1 });
+            }
 
-        document.getElementById('nameInput').value = ''; // Clear input
-    };
+            document.getElementById('nameInput').value = ''; // Clear input
+        };
 
-    // Function to display muted members in real time
-    function displayMutes() {
-        const nameList = document.getElementById('nameList');
-        const muteCollection = collection(db, "mutes");
+        // Function to display muted members in real time
+        function displayMutes() {
+            const nameList = document.getElementById('nameList');
+            const muteCollection = collection(db, "mutes");
 
-        onSnapshot(muteCollection, (snapshot) => {
-            nameList.innerHTML = ''; // Clear previous list
-            snapshot.forEach((doc) => {  // 🔥 Fix: Loops through Firestore documents correctly
-                let li = document.createElement('li');
-                li.textContent = `${doc.id}: muted ${doc.data().count} times`;
-                nameList.appendChild(li);
+            onSnapshot(muteCollection, (snapshot) => {
+                nameList.innerHTML = ''; // Clear previous list
+                snapshot.docs.forEach((doc) => { // 🔥 Fix: Use snapshot.docs
+                    let li = document.createElement('li');
+                    li.textContent = `${doc.id}: muted ${doc.data().count} times`;
+                    nameList.appendChild(li);
+                });
             });
-        });
-    }
+        }
 
-    displayMutes(); // Load data on page load
+        displayMutes(); // Load data on page load
+
+    } catch (error) {
+        console.error("🔥 Firebase Initialization Error:", error);
+    }
 </script>
