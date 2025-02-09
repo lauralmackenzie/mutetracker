@@ -4,8 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mute Tracker</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwo1dgAR31D12DT9cq_LMKpczky9sMf38",
+            authDomain: "mute-tracker.firebaseapp.com",
+            projectId: "mute-tracker",
+            storageBucket: "mute-tracker.firebasestorage.app",
+            messagingSenderId: "594708484721",
+            appId: "1:594708484721:web:e652b6d2593ad80480c1d0"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Function to add a mute entry
+        window.addMute = async function () {
+            let nameInput = document.getElementById('nameInput').value.trim();
+            if (nameInput === '') {
+                alert('Please enter a member name.');
+                return;
+            }
+
+            const nameRef = doc(db, "mutes", nameInput);
+            const docSnap = await getDoc(nameRef);
+
+            if (docSnap.exists()) {
+                let newCount = docSnap.data().count + 1;
+                await updateDoc(nameRef, { count: newCount });
+            } else {
+                await setDoc(nameRef, { count: 1 });
+            }
+
+            document.getElementById('nameInput').value = ''; // Clear input
+        };
+
+        // Function to display muted members
+        function displayMutes() {
+            const nameList = document.getElementById('nameList');
+            const muteCollection = collection(db, "mutes");
+
+            onSnapshot(muteCollection, (snapshot) => {
+                nameList.innerHTML = ''; // Clear previous list
+                snapshot.forEach((doc) => {
+                    let li = document.createElement('li');
+                    li.textContent = `${doc.id}: muted ${doc.data().count} times`;
+                    nameList.appendChild(li);
+                });
+            });
+        }
+
+        displayMutes(); // Load existing data on page load
+    </script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
         input { padding: 8px; font-size: 16px; }
@@ -22,56 +77,6 @@
 
     <h3>Members have been muted:</h3>
     <ul id="nameList"></ul>
-
-    <script>
-        // 🔹 Step 1: Initialize Firebase (Replace with your config)
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // 🔹 Step 2: Function to add a mute entry
-        function addMute() {
-            let nameInput = document.getElementById('nameInput').value.trim();
-            if (nameInput === '') {
-                alert('Please enter a member name.');
-                return;
-            }
-
-            // Check if the name already exists in Firestore
-            db.collection("mutes").doc(nameInput).get().then((doc) => {
-                if (doc.exists) {
-                    let newCount = doc.data().count + 1;
-                    db.collection("mutes").doc(nameInput).update({ count: newCount });
-                } else {
-                    db.collection("mutes").doc(nameInput).set({ count: 1 });
-                }
-            });
-
-            document.getElementById('nameInput').value = ''; // Clear input
-        }
-
-        // 🔹 Step 3: Listen for updates and display muted members
-        function displayMutes() {
-            db.collection("mutes").onSnapshot((snapshot) => {
-                let nameList = document.getElementById('nameList');
-                nameList.innerHTML = ''; // Clear previous list
-                snapshot.forEach((doc) => {
-                    let li = document.createElement('li');
-                    li.textContent = `${doc.id}: muted ${doc.data().count} times`;
-                    nameList.appendChild(li);
-                });
-            });
-        }
-
-        displayMutes(); // Load existing data on page load
-    </script>
 
 </body>
 </html>
