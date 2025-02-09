@@ -4,75 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mute Tracker</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-            background-color: antiquewhite;
-        }
-        input {
-            padding: 8px;
-            font-size: 16px;
-        }
-        button {
-            padding: 8px 12px;
-            font-size: 16px;
-            margin-left: 5px;
-            cursor: pointer;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            font-size: 18px;
-            margin: 5px 0;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        input { padding: 8px; font-size: 16px; }
+        button { padding: 8px 12px; font-size: 16px; margin-left: 5px; cursor: pointer; }
+        ul { list-style-type: none; padding: 0; }
+        li { font-size: 18px; margin: 5px 0; }
     </style>
 </head>
 <body>
 
     <h2>Mute Tracker</h2>
     <input type="text" id="nameInput" placeholder="Enter member name">
-    <button onclick="addName()">Submit</button>
+    <button onclick="addMute()">Mute</button>
 
     <h3>Members have been muted:</h3>
     <ul id="nameList"></ul>
 
     <script>
-        // Load stored names from localStorage
-        let nameCounts = JSON.parse(localStorage.getItem('nameCounts')) || {};
+        // 🔹 Step 1: Initialize Firebase (Replace with your config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        function addName() {
+        // 🔹 Step 2: Function to add a mute entry
+        function addMute() {
             let nameInput = document.getElementById('nameInput').value.trim();
             if (nameInput === '') {
                 alert('Please enter a member name.');
                 return;
             }
 
-            // Update count
-            nameCounts[nameInput] = (nameCounts[nameInput] || 0) + 1;
+            // Check if the name already exists in Firestore
+            db.collection("mutes").doc(nameInput).get().then((doc) => {
+                if (doc.exists) {
+                    let newCount = doc.data().count + 1;
+                    db.collection("mutes").doc(nameInput).update({ count: newCount });
+                } else {
+                    db.collection("mutes").doc(nameInput).set({ count: 1 });
+                }
+            });
 
-            // Save to localStorage
-            localStorage.setItem('nameCounts', JSON.stringify(nameCounts));
-
-            // Refresh the display
-            displayNames();
+            document.getElementById('nameInput').value = ''; // Clear input
         }
 
-        function displayNames() {
-            let nameList = document.getElementById('nameList');
-            nameList.innerHTML = ''; // Clear previous list
-            for (let name in nameCounts) {
-                let li = document.createElement('li');
-                li.textContent = `${name}: muted ${nameCounts[name]} times`;
-                nameList.appendChild(li);
-            }
+        // 🔹 Step 3: Listen for updates and display muted members
+        function displayMutes() {
+            db.collection("mutes").onSnapshot((snapshot) => {
+                let nameList = document.getElementById('nameList');
+                nameList.innerHTML = ''; // Clear previous list
+                snapshot.forEach((doc) => {
+                    let li = document.createElement('li');
+                    li.textContent = `${doc.id}: muted ${doc.data().count} times`;
+                    nameList.appendChild(li);
+                });
+            });
         }
 
-        // Display stored names on page load
-        displayNames();
+        displayMutes(); // Load existing data on page load
     </script>
 
 </body>
